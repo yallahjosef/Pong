@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Pong</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+        }
+        canvas {
+            border: 2px solid white;
+        }
+        h1 {
+            position: absolute;
+            top: 20px;
+            color: white;
+            font-size: 24px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multiplayer Pong</h1>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const paddleWidth = 10, paddleHeight = 80;
+        const ballSize = 10;
+
+        let leftPaddleY = (canvas.height - paddleHeight) / 2;
+        let rightPaddleY = (canvas.height - paddleHeight) / 2;
+        let ballX = canvas.width / 2, ballY = canvas.height / 2;
+        let ballSpeedX = 2, ballSpeedY = 2;
+        let leftPaddleSpeed = 0, rightPaddleSpeed = 0;
+
+        // Lese die Eingaben aus dem localStorage
+        function readInput() {
+            const leftInput = localStorage.getItem('leftPaddleSpeed') || 0;
+            const rightInput = localStorage.getItem('rightPaddleSpeed') || 0;
+            leftPaddleSpeed = parseInt(leftInput);
+            rightPaddleSpeed = parseInt(rightInput);
+        }
+
+        // Zeichne den Ball
+        function drawBall() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(ballX, ballY, ballSize, ballSize);
+        }
+
+        // Zeichne die Paddles
+        function drawPaddles() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, leftPaddleY, paddleWidth, paddleHeight);
+            ctx.fillRect(canvas.width - paddleWidth, rightPaddleY, paddleWidth, paddleHeight);
+        }
+
+        // Zeichne den Punktestand
+        function drawScore() {
+            ctx.font = '20px Arial';
+            ctx.fillText('Player 1', 50, 30);
+            ctx.fillText('Player 2', canvas.width - 100, 30);
+        }
+
+        // Update Spielobjekte und Kollisionslogik
+        function update() {
+            // Lese die Eingaben
+            readInput();
+
+            // Bewege den Ball
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Ball Kollision mit Wänden
+            if (ballY <= 0 || ballY + ballSize >= canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Ball Kollision mit Paddles
+            if (ballX <= paddleWidth && ballY >= leftPaddleY && ballY <= leftPaddleY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            if (ballX + ballSize >= canvas.width - paddleWidth && ballY >= rightPaddleY && ballY <= rightPaddleY + paddleHeight) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Ball Kollision mit Schlägen (links und rechts)
+            if (ballX <= 0 || ballX + ballSize >= canvas.width) {
+                ballX = canvas.width / 2;
+                ballY = canvas.height / 2;
+            }
+
+            // Paddle Bewegung
+            leftPaddleY += leftPaddleSpeed;
+            rightPaddleY += rightPaddleSpeed;
+
+            // Verhindern, dass die Paddles den Bildschirm verlassen
+            leftPaddleY = Math.max(0, Math.min(canvas.height - paddleHeight, leftPaddleY));
+            rightPaddleY = Math.max(0, Math.min(canvas.height - paddleHeight, rightPaddleY));
+
+            // Zeichne alles neu
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBall();
+            drawPaddles();
+            drawScore();
+
+            requestAnimationFrame(update);
+        }
+
+        // Steuerung des linken Paddles
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowUp') {
+                localStorage.setItem('leftPaddleSpeed', -4);
+            } else if (event.key === 'ArrowDown') {
+                localStorage.setItem('leftPaddleSpeed', 4);
+            }
+        });
+
+        window.addEventListener('keyup', function (event) {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                localStorage.setItem('leftPaddleSpeed', 0);
+            }
+        });
+
+        // Steuerung des rechten Paddles
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'w') {
+                localStorage.setItem('rightPaddleSpeed', -4);
+            } else if (event.key === 's') {
+                localStorage.setItem('rightPaddleSpeed', 4);
+            }
+        });
+
+        window.addEventListener('keyup', function (event) {
+            if (event.key === 'w' || event.key === 's') {
+                localStorage.setItem('rightPaddleSpeed', 0);
+            }
+        });
+
+        // Starte das Spiel
+        update();
+    </script>
+</body>
+</html>
